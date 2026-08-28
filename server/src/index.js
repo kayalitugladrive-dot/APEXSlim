@@ -41,6 +41,36 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/internal', internalRoutes);
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = path.resolve(__dirname, '../../complete-template/dist');
+
+if (fs.existsSync(path.join(distDir, 'index.html'))) {
+	app.use(express.static(distDir));
+	app.get(/^(?!\/api|\/socket\.io|\/internal).*/, (req, res) => {
+		res.sendFile(path.join(distDir, 'index.html'));
+	});
+	console.log('Serving UI from', distDir);
+} else {
+	app.get('/', (req, res) => {
+		res.status(200).type('html').send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>APEXSlim</title>
+<style>body{font-family:sans-serif;max-width:640px;margin:48px auto;color:#123}</style>
+</head><body>
+<h1>APEXSlim API ayakta</h1>
+<p>Arayüz derlemesi bulunamadı (<code>complete-template/dist</code>).</p>
+<p>VDS CMD:</p>
+<pre>cd complete-template
+npm install
+npm run build
+cd ..
+pm2 restart all</pre>
+<p>Sonra bu sayfayı yenile: arayüz <strong>/</strong> adresinde açılır.</p>
+<p>API kontrol: <a href="/api/health">/api/health</a></p>
+</body></html>`);
+	});
+	console.warn('UI build missing:', distDir);
+}
+
 app.use(errorHandler);
 
 async function seedDemo() {
