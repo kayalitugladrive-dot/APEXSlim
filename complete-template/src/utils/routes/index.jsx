@@ -8,6 +8,7 @@ import MinimalLayout from '@/components/layouts/minimalLayout';
 import MainLayout from '@/components/layouts/mainLayout';
 
 import Page404 from '@/pages/errorPages/404';
+import RequireAuth from '@/components/apex/RequireAuth';
 
 const Dashboard1Page = withLazyLoadably(lazy(() => import('@/pages/dashboardsPages/dashboard1')));
 const Dashboard2Page = withLazyLoadably(lazy(() => import('@/pages/dashboardsPages/dashboard2')));
@@ -43,13 +44,20 @@ const SamplePage = withLazyLoadably(lazy(() => import('@/pages/sample')));
 const ThemeTypographyPage = withLazyLoadably(lazy(() => import('@/pages/themePages/themeTypography')));
 const ThemeColorsPage = withLazyLoadably(lazy(() => import('@/pages/themePages/themeColors')));
 const ThemeShadowPage = withLazyLoadably(lazy(() => import('@/pages/themePages/themeShadow')));
+const ApexDashboardPage = withLazyLoadably(lazy(() => import('@/pages/apex/dashboard')));
+const ApexApiKeysPage = withLazyLoadably(lazy(() => import('@/pages/apex/apiKeys')));
+const ApexLoginPage = withLazyLoadably(lazy(() => import('@/pages/apex/login')));
+const ApexTerminalPage = withLazyLoadably(lazy(() => import('@/pages/apex/terminal')));
+const ApexBotsPage = withLazyLoadably(lazy(() => import('@/pages/apex/bots')));
+const ApexBillingPage = withLazyLoadably(lazy(() => import('@/pages/apex/billing')));
 
 function Router() {
 	return (
-		<BrowserRouter basename="/slim-free-react-mui-template">
+		<BrowserRouter basename="/">
 			<ScrollToTopOnRouteChange>
 				<Routes>
 					<Route path="/" element={<MinimalLayout />}>
+						<Route path="apex/login" element={<ApexLoginPage />} />
 						<Route path="pages/">
 							<Route path="login" element={<LoginPage />} />
 							<Route path="login/simple" element={<LoginSimplePage />} />
@@ -60,7 +68,54 @@ function Router() {
 						</Route>
 					</Route>
 					<Route path="/" element={<MainLayout />}>
-						<Route index element={<Dashboard1Page />} />
+						<Route
+							index
+							element={
+								<RequireAuth>
+									<ApexDashboardPage />
+								</RequireAuth>
+							}
+						/>
+						<Route
+							path="apex/dashboard"
+							element={
+								<RequireAuth>
+									<ApexDashboardPage />
+								</RequireAuth>
+							}
+						/>
+						<Route
+							path="apex/api-keys"
+							element={
+								<RequireAuth>
+									<ApexApiKeysPage />
+								</RequireAuth>
+							}
+						/>
+						<Route
+							path="apex/terminal"
+							element={
+								<RequireAuth>
+									<ApexTerminalPage />
+								</RequireAuth>
+							}
+						/>
+						<Route
+							path="apex/bots"
+							element={
+								<RequireAuth>
+									<ApexBotsPage />
+								</RequireAuth>
+							}
+						/>
+						<Route
+							path="apex/billing"
+							element={
+								<RequireAuth>
+									<ApexBillingPage />
+								</RequireAuth>
+							}
+						/>
 						<Route path="samplePage" element={<SamplePage />} />
 
 						<Route path="dashboards/">

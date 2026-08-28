@@ -8,6 +8,10 @@ import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined
 import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
 import WidgetsOutlinedIcon from '@mui/icons-material/WidgetsOutlined';
 import WebOutlinedIcon from '@mui/icons-material/WebOutlined';
+import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
+import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
+import PrecisionManufacturingOutlinedIcon from '@mui/icons-material/PrecisionManufacturingOutlined';
 
 /**
  * @example
@@ -22,6 +26,41 @@ import WebOutlinedIcon from '@mui/icons-material/WebOutlined';
  */
 
 const NAV_LINKS_CONFIG = [
+	{
+		id: uuid(),
+		type: 'item',
+		title: 'APEX Dashboard',
+		Icon: ShowChartOutlinedIcon,
+		href: '/apex/dashboard',
+	},
+	{
+		id: uuid(),
+		type: 'item',
+		title: 'API Keys',
+		Icon: VpnKeyOutlinedIcon,
+		href: '/apex/api-keys',
+	},
+	{
+		id: uuid(),
+		type: 'item',
+		title: 'Terminal',
+		Icon: TimelineOutlinedIcon,
+		href: '/apex/terminal',
+	},
+	{
+		id: uuid(),
+		type: 'item',
+		title: 'Bots',
+		Icon: PrecisionManufacturingOutlinedIcon,
+		href: '/apex/bots',
+	},
+	{
+		id: uuid(),
+		type: 'item',
+		title: 'Billing',
+		Icon: InventoryOutlinedIcon,
+		href: '/apex/billing',
+	},
 	{
 		id: uuid(),
 		type: 'group',

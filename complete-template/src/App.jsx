@@ -15,14 +15,17 @@ import { Provider as SnackbarProvider } from '@/components/snackbar';
 import MUITheme from '@/utils/theme';
 import Router from '@/utils/routes';
 import CustomizationLayout from '@/components/layouts/customization';
+import { AuthProvider } from '@/context/AuthContext';
 
 function App() {
 	return (
 		<StoreProvider>
 			<MUITheme>
 				<SnackbarProvider>
-					<CustomizationLayout />
-					<Router />
+					<AuthProvider>
+						<CustomizationLayout />
+						<Router />
+					</AuthProvider>
 				</SnackbarProvider>
 			</MUITheme>
 		</StoreProvider>

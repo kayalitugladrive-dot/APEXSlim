@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ExchangeType {
+  BINANCE
+  BINANCE_FUTURES
+  BYBIT
+  OKX
+  OTHER
+}
+
+enum MarketType {
+  SPOT
+  FUTURES
+}
+
+enum OrderSide {
+  BUY
+  SELL
+  LONG
+  SHORT
+}
+
+enum OrderStatus {
+  NEW
+  OPEN
+  FILLED
+  PARTIALLY_FILLED
+  CANCELED
+  REJECTED
+  EXPIRED
+}
+
+enum PositionStatus {
+  OPEN
+  CLOSED
+  LIQUIDATED
+}
+
+enum BotStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  STOPPED
+  ERROR
+}
+
+enum SignalSource {
+  RSI
+  MACD
+  SMART_MONEY
+  COPY_TRADE
+  AI
+  CUSTOM
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+  role              String    @default("trader")
+  twoFaSecret       String?
+  subscriptionTier  String    @default("FREE")
+  licenseExpiry     DateTime?
+  isActive          Boolean   @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  apiKeys       ExchangeApiKey[]
+  wallets       WalletSnapshot[]
+  positions     Position[]
+  orders        Order[]
+  bots          Bot[]
+  copyRelations CopyTradeFollow[] @relation("Follower")
+  copyLeaders   CopyTradeFollow[] @relation("Leader")
+  signals       Signal[]
+  aiChats       AiChatMessage[]
+  auditLogs     AuditLog[]
+  sessions      Session[]
+  payments      Payment[]
+}
+
+model Payment {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan             String
+  amountTry        Decimal  @db.Decimal(12, 2)
+  status           String
+  provider         String   @default("shopier")
+  platformOrderId  String   @unique
+  paymentId        String?
+  raw              Json?
+  createdAt        DateTime @default(now())
+  completedAt      DateTime?
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  ip        String?
+  userAgent String?
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  ip        String?
+  userAgent String?
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model BotConfig {
+  id             String   @id @default(uuid())
+  userId         String
+  apiKeyId       String?
+  name           String
+  symbol         String
+  leverage       Int      @default(1)
+  side           String
+  takeProfitPct  Decimal? @db.Decimal(8, 4)
+  stopLossPct    Decimal? @db.Decimal(8, 4)
+  indicator      String
+  params         Json
+  riskModel      Json?
+  status         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+model TradeLog {
+  id         String   @id @default(uuid())
+  userId     String
+  botId      String?
+  orderId    String?
+  symbol     String
+  side       String
+  entryPrice Decimal? @db.Decimal(36, 18)
+  exitPrice  Decimal? @db.Decimal(36, 18)
+  pnl        Decimal? @db.Decimal(36, 8)
+  timestamp  DateTime @default(now())
+  note       String?
+
+  @@index([userId, timestamp])
+}
+
+model ExchangeApiKey {
+  id               String       @id @default(uuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label            String
+  exchange         ExchangeType
+  marketType       MarketType   @default(FUTURES)
+  apiKeyCipher     String
+  apiSecretCipher  String
+  passphraseCipher String?
+  iv               String
+  authTag          String
+  permissions      Json
+  isTestnet        Boolean      @default(true)
+  isActive         Boolean      @default(true)
+  lastVerifiedAt   DateTime?
+  lastError        String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  bots      Bot[]
+  orders    Order[]
+  positions Position[]
+  wallets   WalletSnapshot[]
+
+  @@index([userId, exchange])
+}
+
+model WalletSnapshot {
+  id         String          @id @default(uuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId   String?
+  apiKey     ExchangeApiKey? @relation(fields: [apiKeyId], references: [id])
+  asset      String
+  free       Decimal         @db.Decimal(36, 18)
+  locked     Decimal         @db.Decimal(36, 18)
+  equityUsd  Decimal?        @db.Decimal(36, 8)
+  capturedAt DateTime        @default(now())
+
+  @@index([userId, capturedAt])
+}
+
+model Position {
+  id            String          @id @default(uuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId      String?
+  apiKey        ExchangeApiKey? @relation(fields: [apiKeyId], references: [id])
+  botId         String?
+  bot           Bot?            @relation(fields: [botId], references: [id])
+  exchange      ExchangeType
+  marketType    MarketType
+  symbol        String
+  side          OrderSide
+  status        PositionStatus  @default(OPEN)
+  leverage      Int             @default(1)
+  entryPrice    Decimal         @db.Decimal(36, 18)
+  markPrice     Decimal?        @db.Decimal(36, 18)
+  quantity      Decimal         @db.Decimal(36, 18)
+  unrealizedPnl Decimal?        @db.Decimal(36, 8)
+  realizedPnl   Decimal?        @db.Decimal(36, 8)
+  hedgeRatio    Decimal?        @db.Decimal(8, 4)
+  takeProfit    Decimal?        @db.Decimal(36, 18)
+  stopLoss      Decimal?        @db.Decimal(36, 18)
+  openedAt      DateTime        @default(now())
+  closedAt      DateTime?
+
+  orders Order[]
+
+  @@index([userId, status])
+  @@index([symbol, status])
+}
+
+model Order {
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId        String?
+  apiKey          ExchangeApiKey? @relation(fields: [apiKeyId], references: [id])
+  positionId      String?
+  position        Position?       @relation(fields: [positionId], references: [id])
+  botId           String?
+  bot             Bot?            @relation(fields: [botId], references: [id])
+  exchange        ExchangeType
+  marketType      MarketType
+  symbol          String
+  side            OrderSide
+  type            String
+  status          OrderStatus     @default(NEW)
+  price           Decimal?        @db.Decimal(36, 18)
+  quantity        Decimal         @db.Decimal(36, 18)
+  filledQty       Decimal         @default(0) @db.Decimal(36, 18)
+  exchangeOrderId String?
+  clientOrderId   String?
+  reduceOnly      Boolean         @default(false)
+  errorMessage    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([exchangeOrderId])
+}
+
+model Bot {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId     String?
+  apiKey       ExchangeApiKey? @relation(fields: [apiKeyId], references: [id])
+  name         String
+  status       BotStatus @default(DRAFT)
+  strategyType String
+  config       Json
+  riskModel    Json?
+  lastRunAt    DateTime?
+  lastError    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  runs      BotRun[]
+  positions Position[]
+  orders    Order[]
+  signals   Signal[]
+}
+
+model BotRun {
+  id        String    @id @default(uuid())
+  botId     String
+  bot       Bot       @relation(fields: [botId], references: [id], onDelete: Cascade)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  status    String
+  logs      Json?
+  pnl       Decimal?  @db.Decimal(36, 8)
+}
+
+model Signal {
+  id         String       @id @default(uuid())
+  userId     String?
+  user       User?        @relation(fields: [userId], references: [id])
+  botId      String?
+  bot        Bot?         @relation(fields: [botId], references: [id])
+  source     SignalSource
+  symbol     String
+  side       OrderSide
+  strength   Decimal?     @db.Decimal(8, 4)
+  payload    Json
+  createdAt  DateTime     @default(now())
+  consumedAt DateTime?
+
+  @@index([symbol, createdAt])
+}
+
+model CopyTradeFollow {
+  id         String  @id @default(uuid())
+  followerId String
+  follower   User    @relation("Follower", fields: [followerId], references: [id])
+  leaderId   String
+  leader     User    @relation("Leader", fields: [leaderId], references: [id])
+  allocation Decimal @db.Decimal(8, 4)
+  isActive   Boolean @default(true)
+  createdAt  DateTime @default(now())
+
+  @@unique([followerId, leaderId])
+}
+
+model MarketMetric {
+  id             String       @id @default(uuid())
+  exchange       ExchangeType
+  symbol         String
+  longShortRatio Decimal?     @db.Decimal(12, 6)
+  fundingRate    Decimal?     @db.Decimal(16, 10)
+  openInterest   Decimal?     @db.Decimal(36, 8)
+  liquidationUsd Decimal?     @db.Decimal(36, 8)
+  capturedAt     DateTime     @default(now())
+
+  @@index([symbol, capturedAt])
+}
+
+model AiChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  context   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+}
