@@ -1,0 +1,1 @@
+import{r,i as a,b as t}from"./index-8d5c91a2.js";var e={},u=a;Object.defineProperty(e,"__esModule",{value:!0});var i=e.default=void 0,l=u(r()),o=t,d=(0,l.default)((0,o.jsx)("path",{d:"M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"}),"Check");i=e.default=d;export{i as d};

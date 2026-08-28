@@ -1,0 +1,10 @@
+{
+  "name": "apexslim",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build:ui": "npm --prefix complete-template run build",
+    "start": "node server/src/index.js",
+    "engine": "node server/src/engine/index.js"
+  }
+}

@@ -42,9 +42,12 @@ app.use('/api/billing', billingRoutes);
 app.use('/internal', internalRoutes);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const distDir = path.resolve(__dirname, '../../complete-template/dist');
+const distDir = [
+	path.resolve(__dirname, '../public'),
+	path.resolve(__dirname, '../../complete-template/dist'),
+].find((dir) => fs.existsSync(path.join(dir, 'index.html')));
 
-if (fs.existsSync(path.join(distDir, 'index.html'))) {
+if (distDir) {
 	app.use(express.static(distDir));
 	app.get(/^(?!\/api|\/socket\.io|\/internal).*/, (req, res) => {
 		res.sendFile(path.join(distDir, 'index.html'));
